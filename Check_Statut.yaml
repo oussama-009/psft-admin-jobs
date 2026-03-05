@@ -1,0 +1,25 @@
+---
+- name: Check Statut PeopleSoft PIA
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+
+  tasks:
+    - name: Lancer singleserverStatus.sh
+      ansible.builtin.shell: |
+        cd /home/psadm2/psft/pt/8.61/webserv/peoplesoft/bin
+        ./singleserverStatus.sh
+      become: true
+      become_user: psadm2
+      register: psft_status
+      ignore_errors: true
+
+    - name: ✅ PeopleSoft est UP
+      ansible.builtin.debug:
+        msg: "✅ PeopleSoft est opérationnel - Status Check Successful"
+      when: "'Status Check Successful' in psft_status.stdout"
+
+    - name: ❌ PeopleSoft est DOWN - ALERTE
+      ansible.builtin.fail:
+        msg: "❌ ALERTE : PeopleSoft est DOWN ! Connection refused !"
+      when: "'Status Check Failed' in psft_status.stdout"

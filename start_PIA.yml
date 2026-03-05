@@ -1,0 +1,17 @@
+- name: Démarrer PeopleSoft PIA
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+
+  tasks:
+    - name: Démarrer PIA (PeopleSoft) en tant que psadm2
+      ansible.builtin.shell: |
+        cd /home/psadm2/psft/pt/8.61/webserv/peoplesoft/bin
+        ./startPIA.sh
+      become: true
+      become_user: psadm2
+      register: start_result
+
+    - name: Afficher le résultat
+      ansible.builtin.debug:
+        msg: "{{ start_result.stdout }}"

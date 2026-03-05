@@ -1,0 +1,8 @@
+- name: Arrêter PeopleSoft PIA
+  hosts: psft_servers
+  become: yes
+  tasks:
+    - name: Stop PIA directement depuis PIA bin
+      shell: |
+        cd /home/psadm2/psft/pt/8.61/webserv/peoplesoft/bin
+        ./stopPIA.sh

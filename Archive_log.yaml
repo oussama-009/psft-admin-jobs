@@ -1,0 +1,47 @@
+---
+- name: Rotation et Compression des Logs
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    logs_path: /home/psadm2/psft/pt/8.61/webserv/peoplesoft/servers/PIA/logs
+    archive_path: /home/psadm2/psft/pt/8.61/webserv/peoplesoft/servers/PIA/logs/archive
+    jours_retention: 30
+
+  tasks:
+    - name: Créer le dossier archive
+      ansible.builtin.file:
+        path: "{{ archive_path }}"
+        state: directory
+        owner: psadm2
+      become: true
+
+    - name: Chercher logs anciens à archiver
+      ansible.builtin.find:
+        paths: "{{ logs_path }}"
+        age: "{{ jours_retention }}d"
+        patterns: "*.log,*.out"
+        recurse: false
+      register: logs_to_archive
+
+    - name: Compresser chaque log avec son nom original + date
+      ansible.builtin.shell: |
+        today=$(date +%Y%m%d)
+        filename=$(basename {{ item.path }})
+        tar -czf {{ archive_path }}/${filename}_${today}.tar.gz -C $(dirname {{ item.path }}) ${filename}
+      loop: "{{ logs_to_archive.files }}"
+      become: true
+      become_user: psadm2
+      when: logs_to_archive.matched > 0
+
+    - name: Supprimer les logs originaux après archivage
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ logs_to_archive.files }}"
+      become: true
+      become_user: psadm2
+      when: logs_to_archive.matched > 0
+
+    - name: ✅ Rotation terminée
+      ansible.builtin.debug:
+        msg: "✅ {{ logs_to_archive.matched }} logs archivés dans {{ archive_path }}"

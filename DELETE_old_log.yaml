@@ -5,7 +5,7 @@
     ansible_python_interpreter: /usr/bin/python3.6
 
     logs_path: /home/psadm2/psft/pt/8.61/webserv/peoplesoft/servers/PIA/logs
-    jours_retention: 90
+    jours_retention: 1
 
   tasks:
 

@@ -24,14 +24,4 @@
       ansible.builtin.debug:
         msg: "{{ old_logs.files | map(attribute='path') | list }}"
 
-    - name: Supprimer les vieux logs
-      ansible.builtin.file:
-        path: "{{ item.path }}"
-        state: absent
-      loop: "{{ old_logs.files }}"
-      become: true
-      become_user: psadm2
-
-    - name: Résultat purge
-      ansible.builtin.debug:
-        msg: "✅ {{ old_logs.matched }} fichiers supprimés"
+    

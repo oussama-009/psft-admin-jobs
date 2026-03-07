@@ -14,12 +14,14 @@
       register: psft_status
       ignore_errors: true
 
-    - name: ✅ PeopleSoft est UP
-      ansible.builtin.debug:
-        msg: "✅ PeopleSoft est opérationnel - Status Check Successful"
+    - block:
+        - name: ✅ PeopleSoft est UP
+          ansible.builtin.debug:
+            msg: "✅ PeopleSoft est opérationnel - Status Check Successful"
       when: "'Status Check Successful' in psft_status.stdout"
 
-    - name: ❌ PeopleSoft est DOWN - ALERTE
-      ansible.builtin.fail:
-        msg: "❌ ALERTE : PeopleSoft est DOWN ! Connection refused !"
+    - block:
+        - name: ❌ PeopleSoft est DOWN - ALERTE
+          ansible.builtin.fail:
+            msg: "❌ ALERTE : PeopleSoft est DOWN ! Connection refused !"
       when: "'Status Check Failed' in psft_status.stdout"

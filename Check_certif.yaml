@@ -1,0 +1,40 @@
+---
+- name: Vérifier l'expiration d'un certificat SSL
+  hosts: all
+  become: true
+  become_user: psadm2
+  vars:
+    cert_file: /opt/ssl/wlcert.cer
+    seuil_alerte: 30  # seuil en jours pour alerte
+
+  tasks:
+    - name: Calculer le nombre de jours restants
+      ansible.builtin.shell: |
+        #!/bin/bash
+        # Détecte le format : DER ou PEM
+        if grep -q "BEGIN CERTIFICATE" "{{ cert_file }}"; then
+          format="PEM"
+        else
+          format="DER"
+        fi
+
+        # Calcul du nombre de jours restants
+        days=$(
+          openssl x509 -in "{{ cert_file }}" -inform $format -noout -enddate \
+          | cut -d= -f2 \
+          | xargs -I{} date -d "{}" +%s \
+          | awk -v now=$(date +%s) '{print int(($1-now)/86400)}'
+        )
+
+        # Vérifier le seuil et afficher le message
+        if [ "$days" -gt {{ seuil_alerte }} ]; then
+          echo "Certificat valide : $days jours restants"
+        else
+          echo "ALERTE : moins de {{ seuil_alerte }} jours restants ! $days jours restants"
+        fi
+      register: cert_expiration
+      changed_when: false
+
+    - name: Afficher le résultat
+      ansible.builtin.debug:
+        msg: "{{ cert_expiration.stdout }}"

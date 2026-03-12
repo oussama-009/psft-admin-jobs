@@ -2,12 +2,17 @@
   hosts: all
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
-    app_domain: APPDOM   # Nom du domaine AppServer
+    app_domain: APPDOM
+    ps_cfg_home: /home/psadm2/psft/pt/8.61
   tasks:
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
         cd $PS_CFG_HOME/appserv/{{ app_domain }}
         ./psft-appserver-{{ app_domain }}.sh status
+      args:
+        executable: /bin/bash
+      environment:
+        PS_CFG_HOME: "{{ ps_cfg_home }}"
       become: true
       become_user: psadm2
       register: app_status
@@ -23,6 +28,10 @@
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
             psadmin -c boot -d {{ app_domain }}
+          args:
+            executable: /bin/bash
+          environment:
+            PS_CFG_HOME: "{{ ps_cfg_home }}"
           become: true
           become_user: psadm2
           register: app_start

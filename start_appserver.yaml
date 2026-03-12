@@ -1,11 +1,8 @@
----
-
 - name: Démarrer PeopleSoft Application Server si nécessaire
   hosts: all
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM   # Nom du domaine AppServer
-
   tasks:
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
@@ -36,7 +33,7 @@
             msg: "✅ Application Server {{ app_domain }} a été démarré avec succès"
           when: "'process started' in app_start.stdout"
 
-        - name: ALERTE : AppServer n'a pas pu démarrer
+        - name: "ALERTE : AppServer n'a pas pu démarrer"
           ansible.builtin.debug:
             msg: "❌ ALERTE : Impossible de démarrer le Application Server {{ app_domain }}"
           when: "'process started' not in app_start.stdout"

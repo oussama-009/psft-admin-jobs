@@ -36,7 +36,7 @@
             msg: "✅ Application Server {{ app_domain }} a été démarré avec succès"
           when: "'process started' in app_start.stdout"
 
-        - name: ALERTE : AppServer n'a pas pu démarrer
+        - name: "ALERTE : AppServer n'a pas pu démarrer"
           ansible.builtin.debug:
             msg: "❌ ALERTE : Impossible de démarrer le Application Server {{ app_domain }}"
           when: "'process started' not in app_start.stdout"

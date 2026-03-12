@@ -1,0 +1,43 @@
+---
+
+- name: Démarrer PeopleSoft Application Server si nécessaire
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    app_domain: APPDOM   # Nom du domaine AppServer
+
+  tasks:
+    - name: Vérifier le statut de l'AppServer
+      ansible.builtin.shell: |
+        cd $PS_CFG_HOME/appserv/{{ app_domain }}
+        ./psft-appserver-{{ app_domain }}.sh status
+      become: true
+      become_user: psadm2
+      register: app_status
+      ignore_errors: true
+
+    - block:
+        - name: AppServer déjà démarré
+          ansible.builtin.debug:
+            msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
+      when: "'is Up' in app_status.stdout"
+
+    - block:
+        - name: Démarrer le domaine AppServer via psadmin
+          ansible.builtin.shell: |
+            psadmin -c boot -d {{ app_domain }}
+          become: true
+          become_user: psadm2
+          register: app_start
+          ignore_errors: true
+
+        - name: Vérifier que AppServer est UP après démarrage
+          ansible.builtin.debug:
+            msg: "✅ Application Server {{ app_domain }} a été démarré avec succès"
+          when: "'process started' in app_start.stdout"
+
+        - name: ALERTE : AppServer n'a pas pu démarrer
+          ansible.builtin.debug:
+            msg: "❌ ALERTE : Impossible de démarrer le Application Server {{ app_domain }}"
+          when: "'process started' not in app_start.stdout"
+      when: "'is running' not in app_status.stdout"

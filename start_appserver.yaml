@@ -4,6 +4,7 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM   # Nom du domaine AppServer
+    ps_cfg_home: /home/psadm2/psft/pt/8.61
 
   tasks:
     - name: Vérifier le statut de l'AppServer

@@ -20,7 +20,7 @@
     - name: AppServer déjà arrêté
       ansible.builtin.debug:
         msg: "❌ AppServer {{ app_domain }} est déjà DOWN — aucune action nécessaire"
-      when: "'Not Started' in app_status.stdout"
+      when: "'not started' in app_status.stdout"
 
     - block:
         - name: Arrêter le domaine AppServer via psadmin
@@ -47,7 +47,7 @@
           become: true
           become_user: psadm2
           register: app_verify
-          until: "'Not Started' in app_verify.stdout"
+          until: "'not started' in app_verify.stdout"
           retries: 3
           delay: 10
           failed_when: false
@@ -55,13 +55,13 @@
         - name: AppServer arrêté avec succès
           ansible.builtin.debug:
             msg: "✅ AppServer {{ app_domain }} est maintenant DOWN"
-          when: "'Not Started' in app_verify.stdout"
+          when: "'not started' in app_verify.stdout"
 
         - name: ALERTE — AppServer n'a pas pu s'arrêter
           ansible.builtin.fail:
             msg: >
               Impossible d'arrêter l'AppServer {{ app_domain }}.
               RC={{ app_stop.rc }} | STDOUT={{ app_stop.stdout }} | STDERR={{ app_stop.stderr }}
-          when: "'Not Started' not in app_verify.stdout"
+          when: "'not started' not in app_verify.stdout"
 
       when: "'Started' in app_status.stdout"

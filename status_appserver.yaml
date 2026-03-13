@@ -1,0 +1,34 @@
+---
+- name: Vérifier le statut du PeopleSoft Application Server
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    app_domain: APPDOM
+
+  tasks:
+    - name: Vérifier le statut de l'AppServer
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -c status -d {{ app_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: app_status
+      failed_when: false
+
+    - name: Afficher le statut brut
+      ansible.builtin.debug:
+        msg: "{{ app_status.stdout }}"
+
+    - name: AppServer est UP
+      ansible.builtin.debug:
+        msg: "✅ AppServer {{ app_domain }} est démarré (Started)"
+      when: "'Started' in app_status.stdout"
+
+    - name: AppServer est DOWN
+      ansible.builtin.debug:
+        msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
+      when: "'Started' not in app_status.stdout"
+
+    

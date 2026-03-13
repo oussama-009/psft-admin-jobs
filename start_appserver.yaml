@@ -16,14 +16,10 @@
       register: app_status
       failed_when: false
 
-    - name: Debug statut brut (diagnostic)
-      ansible.builtin.debug:
-        msg: "STDOUT: '{{ app_status.stdout }}' | STDERR: '{{ app_status.stderr }}' | RC: {{ app_status.rc }}"
-
     - name: AppServer déjà démarré
       ansible.builtin.debug:
         msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
-      when: "app_status.stdout is defined and 'is UP' in app_status.stdout"
+      when: "'is Up' in app_status.stdout"
 
     - block:
         - name: Démarrer le domaine AppServer via psadmin
@@ -42,7 +38,7 @@
           become: true
           become_user: psadm2
           register: app_verify
-          until: "'is UP' in app_verify.stdout"
+          until: "'is Up' in app_verify.stdout"
           retries: 10
           delay: 15
           failed_when: false
@@ -50,11 +46,11 @@
         - name: "✅ AppServer démarré avec succès"
           ansible.builtin.debug:
             msg: "✅ Application Server {{ app_domain }} est maintenant UP"
-          when: "'is UP' in app_verify.stdout"
+          when: "'is Up' in app_verify.stdout"
 
         - name: "❌ ALERTE : AppServer n'a pas pu démarrer"
           ansible.builtin.fail:
             msg: "❌ Impossible de démarrer le Application Server {{ app_domain }}"
-          when: "'is UP' not in app_verify.stdout"
+          when: "'is Up' not in app_verify.stdout"
 
-      when: "app_status.stdout is not defined or 'is UP' not in app_status.stdout"
+      when: "'is Up' not in app_status.stdout"

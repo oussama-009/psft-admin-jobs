@@ -13,8 +13,8 @@
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
         source /home/psadm2/.bashrc
-        cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
-        ./psft-appserver-{{ app_domain }}.sh status
+        export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
+        "{{ psadmin_path }}" -c status -d {{ app_domain }}
       args:
         executable: /bin/bash
       become: true
@@ -25,7 +25,7 @@
     - name: AppServer déjà démarré
       ansible.builtin.debug:
         msg: "AppServer {{ app_domain }} est déjà UP — aucune action nécessaire"
-      when: "'is Up' in app_status.stdout"
+      when: "'Started' in app_status.stdout"
 
     - block:
 
@@ -48,14 +48,14 @@
         - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
             source /home/psadm2/.bashrc
-            cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
-            ./psft-appserver-{{ app_domain }}.sh status
+            export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
+            "{{ psadmin_path }}" -c status -d {{ app_domain }}
           args:
             executable: /bin/bash
           become: true
           become_user: psadm2
           register: app_verify
-          until: "'is Up' in app_verify.stdout"
+          until: "'Started' in app_verify.stdout"
           retries: 3
           delay: 10
           failed_when: false
@@ -63,13 +63,13 @@
         - name: AppServer démarré avec succès
           ansible.builtin.debug:
             msg: "AppServer {{ app_domain }} est maintenant UP"
-          when: "'is Up' in app_verify.stdout"
+          when: "'Started' in app_verify.stdout"
 
         - name: ALERTE — AppServer n'a pas pu démarrer
           ansible.builtin.fail:
             msg: >
               Impossible de démarrer l'AppServer {{ app_domain }}.
               RC={{ app_start.rc }} | STDOUT={{ app_start.stdout }} | STDERR={{ app_start.stderr }}
-          when: "'is Up' not in app_verify.stdout"
+          when: "'Started' not in app_verify.stdout"
 
-      when: "'is Up' not in app_status.stdout"
+      when: "'Started' not in app_status.stdout"

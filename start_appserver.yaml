@@ -18,24 +18,23 @@
 
     - name: AppServer déjà démarré
       ansible.builtin.debug:
-        msg: "Application Server {{ app_domain }} est déjà UP"
+        msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
       when: "'is Up' in app_status.stdout"
 
     - block:
-
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
             psadmin -c boot -d {{ app_domain }}
           become: true
           become_user: psadm2
           register: app_start
-          failed_when: true
+          failed_when: false
 
-        - name: Attendre 15 secondes après le démarrage
+        - name: ⏳ Pause de 15 secondes après le démarrage
           ansible.builtin.pause:
             seconds: 15
 
-        - name: Vérifier que l'AppServer est UP 
+        - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
             cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
             ./psft-appserver-{{ app_domain }}.sh status
@@ -47,14 +46,14 @@
           delay: 10
           failed_when: false
 
-        - name: AppServer démarré avec succès
+        - name: "✅ AppServer démarré avec succès"
           ansible.builtin.debug:
-            msg: "Application Server {{ app_domain }} est maintenant UP"
+            msg: "✅ Application Server {{ app_domain }} est maintenant UP"
           when: "'is Up' in app_verify.stdout"
 
-        - name: ALERTE : AppServer n'a pas pu démarrer
+        - name: "❌ ALERTE : AppServer n'a pas pu démarrer"
           ansible.builtin.fail:
-            msg: "Impossible de démarrer le Application Server {{ app_domain }}"
+            msg: "❌ Impossible de démarrer le Application Server {{ app_domain }}"
           when: "'is Up' not in app_verify.stdout"
 
       when: "'is Up' not in app_status.stdout"

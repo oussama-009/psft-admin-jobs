@@ -1,0 +1,109 @@
+- name: Redémarrer PeopleSoft Process Scheduler
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    prcs_domain: PRCSDOM
+  tasks:
+
+    # ─── PHASE 1 : ARRÊT ─────────────────────────────────────
+    - name: Vérifier le statut du Scheduler avant arrêt
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -p status -d {{ prcs_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: prcs_status
+      failed_when: false
+
+    - name: Scheduler déjà arrêté — passage direct au démarrage
+      ansible.builtin.debug:
+        msg: "⚠️ Scheduler {{ prcs_domain }} est déjà DOWN — passage direct au démarrage"
+      when: "'Started' not in prcs_status.stdout"
+
+    - block:
+        - name: Arrêter le Scheduler via psadmin
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -p shutdown -d {{ prcs_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: prcs_stop
+          failed_when: false
+
+        - name: Pause de 15 secondes après l'arrêt
+          ansible.builtin.pause:
+            seconds: 15
+
+        - name: Vérifier que le Scheduler est arrêté (3 tentatives, intervalle 10s)
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -p status -d {{ prcs_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: prcs_verify_stop
+          until: "'not started' in prcs_verify_stop.stdout"
+          retries: 3
+          delay: 10
+          failed_when: false
+
+        - name: Scheduler arrêté avec succès
+          ansible.builtin.debug:
+            msg: "✅ Scheduler {{ prcs_domain }} est maintenant DOWN"
+          when: "'not started' in prcs_verify_stop.stdout"
+
+        - name: ALERTE — Scheduler n'a pas pu s'arrêter
+          ansible.builtin.fail:
+            msg: >
+              Impossible d'arrêter le Scheduler {{ prcs_domain }}.
+              RC={{ prcs_stop.rc }} | STDOUT={{ prcs_stop.stdout }} | STDERR={{ prcs_stop.stderr }}
+          when: "'not started' not in prcs_verify_stop.stdout"
+
+      when: "'Started' in prcs_status.stdout"
+
+    # ─── PHASE 2 : DÉMARRAGE ─────────────────────────────────
+    - name: Démarrer le Scheduler via psadmin
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -p start -d {{ prcs_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: prcs_start
+      failed_when: false
+
+    - name: Pause de 15 secondes après le démarrage
+      ansible.builtin.pause:
+        seconds: 15
+
+    - name: Vérifier que le Scheduler est UP (3 tentatives, intervalle 10s)
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -p status -d {{ prcs_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: prcs_verify_start
+      until: "'Started' in prcs_verify_start.stdout"
+      retries: 3
+      delay: 10
+      failed_when: false
+
+    - name: Scheduler redémarré avec succès
+      ansible.builtin.debug:
+        msg: "✅ Scheduler {{ prcs_domain }} est maintenant UP — restart terminé"
+      when: "'Started' in prcs_verify_start.stdout"
+
+    - name: ALERTE — Scheduler n'a pas pu démarrer
+      ansible.builtin.fail:
+        msg: >
+          Impossible de démarrer le Scheduler {{ prcs_domain }}.
+          RC={{ prcs_start.rc }} | STDOUT={{ prcs_start.stdout }} | STDERR={{ prcs_start.stderr }}
+      when: "'Started' not in prcs_verify_start.stdout"

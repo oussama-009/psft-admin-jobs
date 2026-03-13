@@ -22,16 +22,9 @@
       register: app_status
       failed_when: false
 
-    - name: "[DEBUG] Statut initial"
-      ansible.builtin.debug:
-        msg:
-          - "RC     : {{ app_status.rc }}"
-          - "STDOUT : {{ app_status.stdout }}"
-          - "STDERR : {{ app_status.stderr }}"
-
     - name: AppServer déjà démarré
       ansible.builtin.debug:
-        msg: "AppServer {{ app_domain }} est déjà UP"
+        msg: "AppServer {{ app_domain }} est déjà UP — aucune action nécessaire"
       when: "'is Up' in app_status.stdout"
 
     - block:
@@ -47,13 +40,6 @@
           become_user: psadm2
           register: app_start
           failed_when: false
-
-        - name: "[DEBUG] Retour commande de démarrage"
-          ansible.builtin.debug:
-            msg:
-              - "RC     : {{ app_start.rc }}"
-              - "STDOUT : {{ app_start.stdout }}"
-              - "STDERR : {{ app_start.stderr }}"
 
         - name: Pause de 15 secondes après le démarrage
           ansible.builtin.pause:
@@ -73,14 +59,6 @@
           retries: 3
           delay: 10
           failed_when: false
-
-        - name: "[DEBUG] Retour vérification"
-          ansible.builtin.debug:
-            msg:
-              - "RC         : {{ app_verify.rc }}"
-              - "STDOUT     : {{ app_verify.stdout }}"
-              - "STDERR     : {{ app_verify.stderr }}"
-              - "Tentatives : {{ app_verify.attempts }}"
 
         - name: AppServer démarré avec succès
           ansible.builtin.debug:

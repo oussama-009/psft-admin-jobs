@@ -5,13 +5,11 @@
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
     ps_cfg_home: /home/psadm2/psft/pt/8.61
+    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
     psadmin_path: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12/bin/psadmin
 
   tasks:
 
-    # ─────────────────────────────────────────────
-    # ÉTAPE 1 : Vérifier le statut initial
-    # ─────────────────────────────────────────────
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
         cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
@@ -21,29 +19,31 @@
       register: app_status
       failed_when: false
 
-    - name: "[DEBUG] Retour statut initial"
+    - name: "[DEBUG] Statut initial"
       ansible.builtin.debug:
         msg:
           - "RC     : {{ app_status.rc }}"
           - "STDOUT : {{ app_status.stdout }}"
           - "STDERR : {{ app_status.stderr }}"
 
-    # ─────────────────────────────────────────────
-    # ÉTAPE 2 : Déjà démarré ?
-    # ─────────────────────────────────────────────
     - name: AppServer déjà démarré
       ansible.builtin.debug:
-        msg: "AppServer {{ app_domain }} est déjà UP — aucune action nécessaire"
+        msg: "AppServer {{ app_domain }} est déjà UP"
       when: "'is Up' in app_status.stdout"
 
-    # ─────────────────────────────────────────────
-    # ÉTAPE 3 : Bloc de démarrage (si pas UP)
-    # ─────────────────────────────────────────────
     - block:
 
+        # ─── CORRECTIF : sourcer l'env PS avant psadmin ───────────────────
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
+            export PS_HOME="{{ ps_home }}"
+            export PATH="${PS_HOME}/bin:${PATH}"
+            export LD_LIBRARY_PATH="${PS_HOME}/lib:${PS_HOME}/lib64:${LD_LIBRARY_PATH}"
+            export TUXDIR="${PS_HOME}"
+            export PS_CFG_HOME="{{ ps_cfg_home }}"
             "{{ psadmin_path }}" -c boot -d {{ app_domain }}
+          args:
+            executable: /bin/bash
           become: true
           become_user: psadm2
           register: app_start
@@ -56,20 +56,10 @@
               - "STDOUT : {{ app_start.stdout }}"
               - "STDERR : {{ app_start.stderr }}"
 
-        - name: "[DEBUG] Détail complet app_start"
-          ansible.builtin.debug:
-            var: app_start
-
-        # ─────────────────────────────────────────
-        # ÉTAPE 4 : Pause
-        # ─────────────────────────────────────────
         - name: Pause de 15 secondes après le démarrage
           ansible.builtin.pause:
             seconds: 15
 
-        # ─────────────────────────────────────────
-        # ÉTAPE 5 : Vérification post-démarrage
-        # ─────────────────────────────────────────
         - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
             cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
@@ -82,21 +72,14 @@
           delay: 10
           failed_when: false
 
-        - name: "[DEBUG] Retour vérification post-démarrage"
+        - name: "[DEBUG] Retour vérification"
           ansible.builtin.debug:
             msg:
-              - "RC     : {{ app_verify.rc }}"
-              - "STDOUT : {{ app_verify.stdout }}"
-              - "STDERR : {{ app_verify.stderr }}"
+              - "RC         : {{ app_verify.rc }}"
+              - "STDOUT     : {{ app_verify.stdout }}"
+              - "STDERR     : {{ app_verify.stderr }}"
               - "Tentatives : {{ app_verify.attempts }}"
 
-        - name: "[DEBUG] Détail complet app_verify"
-          ansible.builtin.debug:
-            var: app_verify
-
-        # ─────────────────────────────────────────
-        # ÉTAPE 6 : Résultat final
-        # ─────────────────────────────────────────
         - name: AppServer démarré avec succès
           ansible.builtin.debug:
             msg: "AppServer {{ app_domain }} est maintenant UP"
@@ -106,9 +89,7 @@
           ansible.builtin.fail:
             msg: >
               Impossible de démarrer l'AppServer {{ app_domain }}.
-              RC={{ app_start.rc }}
-              STDOUT={{ app_start.stdout }}
-              STDERR={{ app_start.stderr }}
+              RC={{ app_start.rc }} | STDOUT={{ app_start.stdout }} | STDERR={{ app_start.stderr }}
           when: "'is Up' not in app_verify.stdout"
 
       when: "'is Up' not in app_status.stdout"

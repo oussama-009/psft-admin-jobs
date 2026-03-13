@@ -4,16 +4,13 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
-    ps_cfg_home: /home/psadm2/psft/pt/8.61
-    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
-    psadmin_path: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12/bin/psadmin
 
   tasks:
 
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
         source /home/psadm2/.bashrc
-        "{{ psadmin_path }}" -c status -d {{ app_domain }}
+        psadmin -c status -d {{ app_domain }}
       args:
         executable: /bin/bash
       become: true
@@ -31,7 +28,7 @@
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
             source /home/psadm2/.bashrc
-            "{{ psadmin_path }}" -c boot -d {{ app_domain }}
+            psadmin -c boot -d {{ app_domain }}
           args:
             executable: /bin/bash
           become: true
@@ -46,7 +43,7 @@
         - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
             source /home/psadm2/.bashrc
-            "{{ psadmin_path }}" -c status -d {{ app_domain }}
+            psadmin -c status -d {{ app_domain }}
           args:
             executable: /bin/bash
           become: true

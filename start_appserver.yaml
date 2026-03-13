@@ -3,41 +3,54 @@
   hosts: all
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
-    app_domain: APPDOM   # Nom du domaine AppServer
+    app_domain: APPDOM
     ps_cfg_home: /home/psadm2/psft/pt/8.61
 
   tasks:
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
-        cd $PS_CFG_HOME/appserv/{{ app_domain }}
+        cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
         ./psft-appserver-{{ app_domain }}.sh status
       become: true
       become_user: psadm2
       register: app_status
-      ignore_errors: true
+      failed_when: false
 
-    - block:
-        - name: AppServer déjà démarré
-          ansible.builtin.debug:
-            msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
+    - name: AppServer déjà démarré
+      ansible.builtin.debug:
+        msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
       when: "'is UP' in app_status.stdout"
 
     - block:
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
-            psadmin -c boot -d {{ app_domain }}
+            cd "{{ ps_cfg_home }}/bin"
+            ./psadmin -c boot -d {{ app_domain }}
           become: true
           become_user: psadm2
           register: app_start
-          ignore_errors: true
+          failed_when: false
 
-        - name: Vérifier que AppServer est UP après démarrage
-          ansible.builtin.debug:
-            msg: "✅ Application Server {{ app_domain }} a été démarré avec succès"
-          when: "'process started' in app_start.stdout"
+        - name: Attendre que l'AppServer soit UP
+          ansible.builtin.shell: |
+            cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
+            ./psft-appserver-{{ app_domain }}.sh status
+          become: true
+          become_user: psadm2
+          register: app_verify
+          until: "'is UP' in app_verify.stdout"
+          retries: 10
+          delay: 15
+          failed_when: false
 
-        - name: "ALERTE : AppServer n'a pas pu démarrer"
+        - name: "✅ AppServer démarré avec succès"
           ansible.builtin.debug:
-            msg: "❌ ALERTE : Impossible de démarrer le Application Server {{ app_domain }}"
-          when: "'process started' not in app_start.stdout"
+            msg: "✅ Application Server {{ app_domain }} est maintenant UP"
+          when: "'is UP' in app_verify.stdout"
+
+        - name: "❌ ALERTE : AppServer n'a pas pu démarrer"
+          ansible.builtin.fail:
+            msg: "❌ Impossible de démarrer le Application Server {{ app_domain }}"
+          when: "'is UP' not in app_verify.stdout"
+
       when: "'is UP' not in app_status.stdout"

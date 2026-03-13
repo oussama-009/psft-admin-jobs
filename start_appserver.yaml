@@ -1,5 +1,5 @@
 ---
-- name: Démarrer PeopleSoft Application Server si nécessaire
+- name: Démarrer PeopleSoft Application Server 
   hosts: all
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
@@ -24,8 +24,7 @@
     - block:
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
-            cd "{{ ps_cfg_home }}/bin"
-            ./psadmin -c boot -d {{ app_domain }}
+            psadmin -c boot -d {{ app_domain }}
           become: true
           become_user: psadm2
           register: app_start

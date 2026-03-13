@@ -1,0 +1,31 @@
+- name: Statut PeopleSoft Process Scheduler
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    prcs_domain: PRCSDOM
+  tasks:
+
+    - name: Récupérer le statut du Scheduler
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -p status -d {{ prcs_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: prcs_status
+      failed_when: false
+
+    - name: Afficher la sortie brute du statut
+      ansible.builtin.debug:
+        msg: "{{ prcs_status.stdout_lines }}"
+
+    - name: Scheduler est UP
+      ansible.builtin.debug:
+        msg: "✅ Scheduler {{ prcs_domain }} — État : RUNNING"
+      when: "'Started' in prcs_status.stdout"
+
+    - name: Scheduler est DOWN
+      ansible.builtin.debug:
+        msg: "❌ Scheduler {{ prcs_domain }} — État : STOPPED"
+      when: "'not started' in prcs_status.stdout"

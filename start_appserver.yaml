@@ -12,8 +12,11 @@
 
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
         cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
         ./psft-appserver-{{ app_domain }}.sh status
+      args:
+        executable: /bin/bash
       become: true
       become_user: psadm2
       register: app_status
@@ -33,14 +36,10 @@
 
     - block:
 
-        # ─── CORRECTIF : sourcer l'env PS avant psadmin ───────────────────
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
-            export PS_HOME="{{ ps_home }}"
-            export PATH="${PS_HOME}/bin:${PATH}"
-            export LD_LIBRARY_PATH="${PS_HOME}/lib:${PS_HOME}/lib64:${LD_LIBRARY_PATH}"
-            export TUXDIR="${PS_HOME}"
-            export PS_CFG_HOME="{{ ps_cfg_home }}"
+            source /home/psadm2/.bashrc
+            export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
             "{{ psadmin_path }}" -c boot -d {{ app_domain }}
           args:
             executable: /bin/bash
@@ -62,8 +61,11 @@
 
         - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
             cd "{{ ps_cfg_home }}/appserv/{{ app_domain }}"
             ./psft-appserver-{{ app_domain }}.sh status
+          args:
+            executable: /bin/bash
           become: true
           become_user: psadm2
           register: app_verify

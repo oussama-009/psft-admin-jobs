@@ -5,6 +5,7 @@
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
     ps_cfg_home: /home/psadm2/psft/pt/8.61
+    psadmin_path: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12/bin/psadmin   # <-- chemin complet de psadmin
 
   tasks:
     - name: Vérifier le statut de l'AppServer
@@ -16,13 +17,6 @@
       register: app_status
       failed_when: false
 
-    - name: "📋 Statut initial de l'AppServer"
-      ansible.builtin.debug:
-        msg: |
-          STDOUT: {{ app_status.stdout }}
-          STDERR: {{ app_status.stderr }}
-          RC: {{ app_status.rc }}
-
     - name: AppServer déjà démarré
       ansible.builtin.debug:
         msg: "ℹ️ Application Server {{ app_domain }} est déjà UP"
@@ -31,18 +25,11 @@
     - block:
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
-            psadmin -c boot -d {{ app_domain }}
+            "{{ psadmin_path }}" -c boot -d {{ app_domain }}
           become: true
           become_user: psadm2
           register: app_start
           failed_when: false
-
-        - name: "📋 Résultat du boot psadmin"
-          ansible.builtin.debug:
-            msg: |
-              STDOUT: {{ app_start.stdout }}
-              STDERR: {{ app_start.stderr }}
-              RC: {{ app_start.rc }}
 
         - name: ⏳ Pause de 15 secondes après le démarrage
           ansible.builtin.pause:
@@ -59,13 +46,6 @@
           retries: 3
           delay: 10
           failed_when: false
-
-        - name: "📋 Résultat vérification AppServer"
-          ansible.builtin.debug:
-            msg: |
-              STDOUT: {{ app_verify.stdout }}
-              STDERR: {{ app_verify.stderr }}
-              RC: {{ app_verify.rc }}
 
         - name: "✅ AppServer démarré avec succès"
           ansible.builtin.debug:

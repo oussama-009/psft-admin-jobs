@@ -13,7 +13,6 @@
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
         source /home/psadm2/.bashrc
-        export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
         "{{ psadmin_path }}" -c status -d {{ app_domain }}
       args:
         executable: /bin/bash
@@ -32,7 +31,6 @@
         - name: Démarrer le domaine AppServer via psadmin
           ansible.builtin.shell: |
             source /home/psadm2/.bashrc
-            export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
             "{{ psadmin_path }}" -c boot -d {{ app_domain }}
           args:
             executable: /bin/bash
@@ -48,7 +46,6 @@
         - name: Vérifier que l'AppServer est UP (3 tentatives, intervalle 10s)
           ansible.builtin.shell: |
             source /home/psadm2/.bashrc
-            export LD_LIBRARY_PATH="{{ ps_home }}/bin:${LD_LIBRARY_PATH}"
             "{{ psadmin_path }}" -c status -d {{ app_domain }}
           args:
             executable: /bin/bash

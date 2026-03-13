@@ -1,0 +1,109 @@
+- name: Redémarrer PeopleSoft Web Server (PIA)
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    pia_domain: peoplesoft
+  tasks:
+
+    # ─── PHASE 1 : ARRÊT ─────────────────────────────────────
+    - name: Vérifier le statut du Web Server avant arrêt
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -w status -d {{ pia_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: web_status
+      failed_when: false
+
+    - name: Web Server déjà arrêté — passage direct au démarrage
+      ansible.builtin.debug:
+        msg: "⚠️ Web Server {{ pia_domain }} est déjà DOWN — passage direct au démarrage"
+      when: "'PIA is stopped' in web_status.stdout or 'not started' in web_status.stdout"
+
+    - block:
+        - name: Arrêter le Web Server via psadmin
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -w shutdown -d {{ pia_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: web_stop
+          failed_when: false
+
+        - name: Pause de 15 secondes après l'arrêt
+          ansible.builtin.pause:
+            seconds: 15
+
+        - name: Vérifier que le Web Server est arrêté (3 tentatives, intervalle 10s)
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -w status -d {{ pia_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: web_verify_stop
+          until: "'PIA is stopped' in web_verify_stop.stdout or 'not started' in web_verify_stop.stdout"
+          retries: 3
+          delay: 10
+          failed_when: false
+
+        - name: Web Server arrêté avec succès
+          ansible.builtin.debug:
+            msg: "✅ Web Server {{ pia_domain }} est maintenant DOWN"
+          when: "'PIA is stopped' in web_verify_stop.stdout or 'not started' in web_verify_stop.stdout"
+
+        - name: ALERTE — Web Server n'a pas pu s'arrêter
+          ansible.builtin.fail:
+            msg: >
+              Impossible d'arrêter le Web Server {{ pia_domain }}.
+              RC={{ web_stop.rc }} | STDOUT={{ web_stop.stdout }} | STDERR={{ web_stop.stderr }}
+          when: "'PIA is stopped' not in web_verify_stop.stdout and 'not started' not in web_verify_stop.stdout"
+
+      when: "'PIA is started' in web_status.stdout or 'Started' in web_status.stdout"
+
+    # ─── PHASE 2 : DÉMARRAGE ─────────────────────────────────
+    - name: Démarrer le Web Server via psadmin
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -w start -d {{ pia_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: web_start
+      failed_when: false
+
+    - name: Pause de 15 secondes après le démarrage
+      ansible.builtin.pause:
+        seconds: 15
+
+    - name: Vérifier que le Web Server est UP (3 tentatives, intervalle 10s)
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -w status -d {{ pia_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: web_verify_start
+      until: "'PIA is started' in web_verify_start.stdout or 'Started' in web_verify_start.stdout"
+      retries: 3
+      delay: 10
+      failed_when: false
+
+    - name: Web Server redémarré avec succès
+      ansible.builtin.debug:
+        msg: "✅ Web Server {{ pia_domain }} est maintenant UP — restart terminé"
+      when: "'PIA is started' in web_verify_start.stdout or 'Started' in web_verify_start.stdout"
+
+    - name: ALERTE — Web Server n'a pas pu démarrer
+      ansible.builtin.fail:
+        msg: >
+          Impossible de démarrer le Web Server {{ pia_domain }}.
+          RC={{ web_start.rc }} | STDOUT={{ web_start.stdout }} | STDERR={{ web_start.stderr }}
+      when: "'PIA is started' not in web_verify_start.stdout and 'Started' not in web_verify_start.stdout"

@@ -23,13 +23,20 @@
       when: "'is Up' in app_status.stdout"
 
     - block:
-        - name: Démarrer le domaine AppServer via psadmin
-          ansible.builtin.shell: |
-            "{{ psadmin_path }}" -c boot -d {{ app_domain }}
-          become: true
-          become_user: psadm2
-          register: app_start
-          failed_when: false
+          - name: Démarrer le domaine AppServer via psadmin
+            ansible.builtin.shell: |
+              "{{ psadmin_path }}" -c boot -d {{ app_domain }}
+            become: true
+            become_user: psadm2
+            register: app_start
+            failed_when: false
+
+          - name: Afficher le retour de la commande de démarrage
+            ansible.builtin.debug:
+              msg:
+                - "RC      : {{ app_start.rc }}"
+                - "STDOUT  : {{ app_start.stdout }}"
+                - "STDERR  : {{ app_start.stderr }}"
 
         - name: ⏳ Pause de 15 secondes après le démarrage
           ansible.builtin.pause:

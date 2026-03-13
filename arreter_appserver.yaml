@@ -1,0 +1,67 @@
+---
+- name: Arrêter PeopleSoft Application Server
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    app_domain: APPDOM
+
+  tasks:
+    - name: Vérifier le statut de l'AppServer
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -c status -d {{ app_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: app_status
+      failed_when: false
+
+    - name: AppServer déjà arrêté
+      ansible.builtin.debug:
+        msg: "❌ AppServer {{ app_domain }} est déjà DOWN — aucune action nécessaire"
+      when: "'Not Started' in app_status.stdout"
+
+    - block:
+        - name: Arrêter le domaine AppServer via psadmin
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -c shutdown -d {{ app_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: app_stop
+          failed_when: false
+
+        - name: Pause de 15 secondes après l'arrêt
+          ansible.builtin.pause:
+            seconds: 15
+
+        - name: Vérifier que l'AppServer est bien arrêté (3 tentatives, intervalle 10s)
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -c status -d {{ app_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: app_verify
+          until: "'Not Started' in app_verify.stdout"
+          retries: 3
+          delay: 10
+          failed_when: false
+
+        - name: AppServer arrêté avec succès
+          ansible.builtin.debug:
+            msg: "✅ AppServer {{ app_domain }} est maintenant DOWN"
+          when: "'Not Started' in app_verify.stdout"
+
+        - name: ALERTE — AppServer n'a pas pu s'arrêter
+          ansible.builtin.fail:
+            msg: >
+              Impossible d'arrêter l'AppServer {{ app_domain }}.
+              RC={{ app_stop.rc }} | STDOUT={{ app_stop.stdout }} | STDERR={{ app_stop.stderr }}
+          when: "'Not Started' not in app_verify.stdout"
+
+      when: "'Started' in app_status.stdout"

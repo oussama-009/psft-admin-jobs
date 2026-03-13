@@ -1,0 +1,66 @@
+- name: Démarrer PeopleSoft Process Scheduler
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.6
+    prcs_domain: PRCSDOM
+  tasks:
+
+    - name: Vérifier le statut du Scheduler
+      ansible.builtin.shell: |
+        source /home/psadm2/.bashrc
+        psadmin -p status -d {{ prcs_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: prcs_status
+      failed_when: false
+
+    - name: Scheduler déjà démarré
+      ansible.builtin.debug:
+        msg: "⚠️ Scheduler {{ prcs_domain }} est déjà UP — aucune action nécessaire"
+      when: "'Started' in prcs_status.stdout"
+
+    - block:
+        - name: Démarrer le Scheduler via psadmin
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -p start -d {{ prcs_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: prcs_start
+          failed_when: false
+
+        - name: Pause de 15 secondes après le démarrage
+          ansible.builtin.pause:
+            seconds: 15
+
+        - name: Vérifier que le Scheduler est UP (3 tentatives, intervalle 10s)
+          ansible.builtin.shell: |
+            source /home/psadm2/.bashrc
+            psadmin -p status -d {{ prcs_domain }}
+          args:
+            executable: /bin/bash
+          become: true
+          become_user: psadm2
+          register: prcs_verify
+          until: "'Started' in prcs_verify.stdout"
+          retries: 3
+          delay: 10
+          failed_when: false
+
+        - name: Scheduler démarré avec succès
+          ansible.builtin.debug:
+            msg: "✅ Scheduler {{ prcs_domain }} est maintenant UP"
+          when: "'Started' in prcs_verify.stdout"
+
+        - name: ALERTE — Scheduler n'a pas pu démarrer
+          ansible.builtin.fail:
+            msg: >
+              Impossible de démarrer le Scheduler {{ prcs_domain }}.
+              RC={{ prcs_start.rc }} | STDOUT={{ prcs_start.stdout }} | STDERR={{ prcs_start.stderr }}
+          when: "'Started' not in prcs_verify.stdout"
+
+      when: "'Started' not in prcs_status.stdout"

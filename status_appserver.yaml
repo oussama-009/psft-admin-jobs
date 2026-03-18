@@ -7,26 +7,56 @@
     ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
 
   tasks:
-    - name: Vérifier existence des fichiers clés
-      ansible.builtin.shell: |
-        echo "=== bash_profile ===" 
-        ls -la /home/psadm2/.bash_profile 2>&1 || echo "ABSENT"
-        echo "=== psconfig.sh ==="
-        ls -la {{ ps_home }}/psconfig.sh 2>&1 || echo "ABSENT"
-        echo "=== psadmin ==="
-        ls -la {{ ps_home }}/bin/psadmin 2>&1 || echo "ABSENT"
-        echo "=== PS_HOME env ==="
-        su - psadm2 -s /bin/bash -c "echo PS_HOME=\$PS_HOME"
-        echo "=== PATH env ==="
-        su - psadm2 -s /bin/bash -c "echo PATH=\$PATH"
-        echo "=== psadmin which ==="
-        su - psadm2 -s /bin/bash -c "which psadmin 2>&1 || echo NOT FOUND"
+    - name: Vérifier bash_profile
+      ansible.builtin.shell: ls -la /home/psadm2/.bash_profile 2>&1 || echo "ABSENT"
       args:
         executable: /bin/bash
       become: true
-      become_user: root
-      register: diag
+      become_user: psadm2
+      register: r1
+      failed_when: false
 
-    - name: Afficher diagnostic
+    - name: Vérifier psconfig.sh
+      ansible.builtin.shell: ls -la {{ ps_home }}/psconfig.sh 2>&1 || echo "ABSENT"
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: r2
+      failed_when: false
+
+    - name: Vérifier psadmin binaire
+      ansible.builtin.shell: ls -la {{ ps_home }}/bin/psadmin 2>&1 || echo "ABSENT"
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: r3
+      failed_when: false
+
+    - name: Vérifier PS_HOME
+      ansible.builtin.shell: echo "PS_HOME=$PS_HOME"
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: r4
+      failed_when: false
+
+    - name: Vérifier PATH et psadmin
+      ansible.builtin.shell: which psadmin 2>&1 || echo "psadmin NOT FOUND"
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: r5
+      failed_when: false
+
+    - name: Afficher résultats
       ansible.builtin.debug:
-        msg: "{{ diag.stdout_lines }}"
+        msg:
+          - "bash_profile : {{ r1.stdout }}"
+          - "psconfig.sh  : {{ r2.stdout }}"
+          - "psadmin bin  : {{ r3.stdout }}"
+          - "PS_HOME      : {{ r4.stdout }}"
+          - "which psadmin: {{ r5.stdout }}"

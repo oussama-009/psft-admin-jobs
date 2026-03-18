@@ -1,8 +1,6 @@
 - name: Redémarrer PeopleSoft Process Scheduler
   hosts: all
   gather_facts: false
-  vars:
-    prcs_domain: PRCSDOM
   tasks:
 
     # ─── PHASE 1 : ARRÊT ─────────────────────────────────────

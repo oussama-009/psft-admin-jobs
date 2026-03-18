@@ -5,7 +5,6 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
-
   tasks:
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |
@@ -17,19 +16,14 @@
       become_user: psadm2
       register: app_status
       failed_when: false
-
     - name: Afficher le statut brut
       ansible.builtin.debug:
-        msg: "{{ app_status.stdout }}"
-
+        msg: "{{ app_status.stdout | default('Aucune sortie') }}"
     - name: AppServer est UP
       ansible.builtin.debug:
         msg: "✅ AppServer {{ app_domain }} est démarré (Started)"
-      when: "'Started' in app_status.stdout"
-
+      when: app_status.stdout is defined and 'Started' in app_status.stdout
     - name: AppServer est DOWN
       ansible.builtin.debug:
         msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
-      when: "'Started' not in app_status.stdout"
-
-    
+      when: app_status.stdout is not defined or 'Started' not in app_status.stdout

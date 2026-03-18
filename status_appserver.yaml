@@ -4,17 +4,10 @@
   gather_facts: false
   vars:
     app_domain: APPDOM
-    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
 
   tasks:
     - name: Vérifier le statut de l'AppServer
-      ansible.builtin.raw: |
-        export PS_HOME={{ ps_home }}
-        export PATH=$PS_HOME/bin:$PATH
-        export LD_LIBRARY_PATH=$PS_HOME/bin:$PS_HOME/lib:$PS_HOME/lib64:$LD_LIBRARY_PATH
-        export TUXDIR=$PS_HOME/bin
-        export PS_CFG_HOME=/home/psadm2
-        psadmin -c status -d {{ app_domain }} 2>&1
+      ansible.builtin.raw: su - psadm2 -c "source /home/psadm2/.bashrc && psadmin -c status -d {{ app_domain }} 2>&1"
       register: app_status
       failed_when: false
 

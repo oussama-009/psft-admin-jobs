@@ -1,10 +1,9 @@
 - name: Arrêter PeopleSoft Web Server (PIA)
   hosts: all
-    gather_facts: false
+  gather_facts: false
   vars:
     pia_domain: peoplesoft
   tasks:
-
     - name: Vérifier le statut du Web Server
       ansible.builtin.shell: |
         source /home/psadm2/.bashrc

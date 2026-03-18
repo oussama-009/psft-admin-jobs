@@ -18,12 +18,12 @@
       failed_when: false
     - name: Afficher le statut brut
       ansible.builtin.debug:
-        msg: "{{ app_status.stdout | default('Aucune sortie') }}"
+        msg: "{{ app_status.stdout }}"
     - name: AppServer est UP
       ansible.builtin.debug:
         msg: "✅ AppServer {{ app_domain }} est démarré (Started)"
-      when: app_status.stdout is defined and 'Started' in app_status.stdout
+      when: "'Started' in app_status.stdout"
     - name: AppServer est DOWN
       ansible.builtin.debug:
         msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
-      when: app_status.stdout is not defined or 'Started' not in app_status.stdout
+      when: "'Started' not in app_status.stdout"

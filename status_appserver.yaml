@@ -5,23 +5,27 @@
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
+    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
+
   tasks:
-
     - name: Vérifier le statut de l'AppServer
-  ansible.builtin.shell: |
-    source /home/psadm2/.bash_profile
-    source $PS_HOME/psconfig.sh
-    psadmin -c status -d {{ app_domain }}
-  args:
-    executable: /bin/bash
-  become: true
-  become_user: psadm2
-  register: app_status
-  failed_when: false
+      ansible.builtin.shell: |
+        source /home/psadm2/.bash_profile
+        source {{ ps_home }}/psconfig.sh
+        psadmin -c status -d {{ app_domain }}
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: psadm2
+      register: app_status
+      failed_when: false
 
-    - name: Afficher le statut brut
+    - name: Debug complet (stdout / stderr / rc)
       ansible.builtin.debug:
-        msg: "{{ app_status.stdout | default('⚠️ Pas de sortie détectée') }}"
+        msg:
+          - "STDOUT : {{ app_status.stdout | default('(vide)') }}"
+          - "STDERR : {{ app_status.stderr | default('(vide)') }}"
+          - "RC     : {{ app_status.rc | default('(inconnu)') }}"
 
     - name: AppServer est UP
       ansible.builtin.debug:

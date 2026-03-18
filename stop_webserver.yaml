@@ -1,9 +1,8 @@
 - name: Arrêter PeopleSoft Web Server (PIA)
   hosts: all
+    gather_facts: false
   vars:
-    ansible_python_interpreter: /usr/bin/python3.6
     pia_domain: peoplesoft
-    pia_home: /home/psadm2/psft/pt/8.60
   tasks:
 
     - name: Vérifier le statut du Web Server
@@ -20,7 +19,7 @@
     - name: Web Server déjà arrêté
       ansible.builtin.debug:
         msg: "❌ Web Server {{ pia_domain }} est déjà DOWN — aucune action nécessaire"
-      when: "'stopped' in web_status.stdout or 'not started' in web_status.stdout"
+      when: "'stopped' in web_status.stdout"
 
     - block:
         - name: Arrêter le Web Server via psadmin
@@ -47,7 +46,7 @@
           become: true
           become_user: psadm2
           register: web_verify
-          until: "'stopped' in web_verify.stdout or 'not started' in web_verify.stdout"
+          until: "'stopped' in web_verify.stdout"
           retries: 3
           delay: 10
           failed_when: false
@@ -55,13 +54,13 @@
         - name: Web Server arrêté avec succès
           ansible.builtin.debug:
             msg: "✅ Web Server {{ pia_domain }} est maintenant DOWN"
-          when: "'stopped' in web_verify.stdout or 'not started' in web_verify.stdout"
+          when: "'stopped' in web_verify.stdout"
 
         - name: ALERTE — Web Server n'a pas pu s'arrêter
           ansible.builtin.fail:
             msg: >
               Impossible d'arrêter le Web Server {{ pia_domain }}.
               RC={{ web_stop.rc }} | STDOUT={{ web_stop.stdout }} | STDERR={{ web_stop.stderr }}
-          when: "'stopped' not in web_verify.stdout and 'not started' not in web_verify.stdout"
+          when: "'stopped' not in web_verify.stdout"
 
-      when: "'started' in web_status.stdout or 'Started' in web_status.stdout"
+      when: "'started' in web_status.stdout"

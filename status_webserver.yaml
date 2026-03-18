@@ -1,29 +1,22 @@
 ---
-- name: Statut PeopleSoft Web Server (PIA)
+- name: Trouver Python
   hosts: all
-  vars:
-    ansible_python_interpreter: /usr/bin/python3.12   # ← changer ici
-    pia_domain: peoplesoft
+  gather_facts: false
   tasks:
-    - name: Récupérer le statut du Web Server
-      ansible.builtin.shell: |
-        source /home/psadm2/.bashrc
-        psadmin -w status -d {{ pia_domain }}
-      args:
-        executable: /bin/bash
-      become: true
-      become_user: psadm2
-      become_method: sudo
-      register: web_status
+    - name: Chercher tous les Python
+      ansible.builtin.raw: ls /usr/bin/python* 2>&1
+      register: r1
       failed_when: false
-    - name: Afficher la sortie brute du statut
+
+    - name: Afficher pythons disponibles
       ansible.builtin.debug:
-        msg: "{{ web_status.stdout_lines }}"
-    - name: Web Server est UP
+        msg: "{{ r1.stdout_lines }}"
+
+    - name: Chercher python3.12 partout
+      ansible.builtin.raw: find / -name "python3.12" -type f 2>/dev/null
+      register: r2
+      failed_when: false
+
+    - name: Afficher localisation python3.12
       ansible.builtin.debug:
-        msg: "✅ Web Server {{ pia_domain }} — État : RUNNING"
-      when: "'started' in web_status.stdout or 'Started' in web_status.stdout"
-    - name: Web Server est DOWN
-      ansible.builtin.debug:
-        msg: "❌ Web Server {{ pia_domain }} — État : STOPPED"
-      when: "'stopped' in web_status.stdout or 'not started' in web_status.stdout"
+        msg: "{{ r2.stdout_lines | default(['NON TROUVE']) }}"

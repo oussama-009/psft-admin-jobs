@@ -52,11 +52,22 @@
       register: r5
       failed_when: false
 
-    - name: Afficher résultats
+    - name: Afficher bash_profile
       ansible.builtin.debug:
-        msg:
-          - "bash_profile : {{ r1.stdout }}"
-          - "psconfig.sh  : {{ r2.stdout }}"
-          - "psadmin bin  : {{ r3.stdout }}"
-          - "PS_HOME      : {{ r4.stdout }}"
-          - "which psadmin: {{ r5.stdout }}"
+        msg: "bash_profile : {{ r1.stdout | default('(vide)') }}"
+
+    - name: Afficher psconfig.sh
+      ansible.builtin.debug:
+        msg: "psconfig.sh  : {{ r2.stdout | default('(vide)') }}"
+
+    - name: Afficher psadmin bin
+      ansible.builtin.debug:
+        msg: "psadmin bin  : {{ r3.stdout | default('(vide)') }}"
+
+    - name: Afficher PS_HOME
+      ansible.builtin.debug:
+        msg: "PS_HOME      : {{ r4.stdout | default('(vide)') }}"
+
+    - name: Afficher which psadmin
+      ansible.builtin.debug:
+        msg: "which psadmin: {{ r5.stdout | default('(vide)') }}"

@@ -1,7 +1,7 @@
 - name: Démarrer PeopleSoft Web Server (PIA)
   hosts: all
+  gather_facts: false
   vars:
-    ansible_python_interpreter: /usr/bin/python3.6
     pia_domain: peoplesoft
   tasks:
 
@@ -19,7 +19,7 @@
     - name: Web Server déjà démarré
       ansible.builtin.debug:
         msg: "⚠️ Web Server {{ pia_domain }} est déjà UP — aucune action nécessaire"
-      when: "'started' in web_status.stdout or 'Started' in web_status.stdout"
+      when: "'started' in web_status.stdout"
 
     - block:
         - name: Démarrer le Web Server via psadmin
@@ -46,7 +46,7 @@
           become: true
           become_user: psadm2
           register: web_verify
-          until: "'started' in web_verify.stdout or 'Started' in web_verify.stdout"
+          until: "'started' in web_verify.stdout"
           retries: 3
           delay: 10
           failed_when: false
@@ -54,13 +54,13 @@
         - name: Web Server démarré avec succès
           ansible.builtin.debug:
             msg: "✅ Web Server {{ pia_domain }} est maintenant UP"
-          when: "'started' in web_verify.stdout or 'Started' in web_verify.stdout"
+          when: "'started' in web_verify.stdout"
 
         - name: ALERTE — Web Server n'a pas pu démarrer
           ansible.builtin.fail:
             msg: >
               Impossible de démarrer le Web Server {{ pia_domain }}.
               RC={{ web_start.rc }} | STDOUT={{ web_start.stdout }} | STDERR={{ web_start.stderr }}
-          when: "'started' not in web_verify.stdout and 'Started' not in web_verify.stdout"
+          when: "'started' not in web_verify.stdout"
 
-      when: "'stopped' in web_status.stdout or 'not started' in web_status.stdout"
+      when: "'stopped' in web_status.stdout"

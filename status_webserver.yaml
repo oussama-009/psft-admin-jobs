@@ -1,6 +1,7 @@
 ---
 - name: Statut PeopleSoft Web Server 
   hosts: all
+  gather_facts: true
   vars:
     pia_domain: peoplesoft        
   tasks:

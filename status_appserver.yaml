@@ -3,21 +3,18 @@
   hosts: all
   gather_facts: false
   vars:
+    ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
 
   tasks:
-    - name: Tester sudo vers psadm2
+    - name: Vérifier le statut de l'AppServer
       ansible.builtin.raw: sudo -u psadm2 /bin/bash -c "source /home/psadm2/.bashrc && psadmin -c status -d {{ app_domain }} 2>&1"
       register: app_status
       failed_when: false
 
-    - name: Afficher stdout complet
+    - name: Afficher le statut brut
       ansible.builtin.debug:
         msg: "{{ app_status.stdout_lines | default(['(vide)']) }}"
-
-    - name: Afficher RC
-      ansible.builtin.debug:
-        msg: "RC : {{ app_status.rc | default('?') }}"
 
     - name: AppServer est UP
       ansible.builtin.debug:

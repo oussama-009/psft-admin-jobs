@@ -2,9 +2,6 @@
 - name: Arrêter PeopleSoft Application Server
   hosts: all
   gather_facts: false
-  vars:
-    app_domain: APPDOM
-
   tasks:
     - name: Vérifier le statut de l'AppServer
       ansible.builtin.shell: |

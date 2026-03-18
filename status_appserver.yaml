@@ -1,74 +1,55 @@
 ---
-- name: Diagnostic PeopleSoft
+- name: Diagnostic connexion SSH
   hosts: all
   gather_facts: false
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
-    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
 
   tasks:
-    - name: Tester whoami sans become
-      ansible.builtin.shell: whoami
-      args:
-        executable: /bin/bash
-      register: r_whoami
+    - name: Test ping simple
+      ansible.builtin.ping:
+
+    - name: Whoami brut
+      ansible.builtin.command: whoami
+      register: r1
       failed_when: false
 
     - name: Afficher whoami
       ansible.builtin.debug:
-        msg: "Connecté en tant que : {{ r_whoami.stdout | default('(vide)') }} | rc={{ r_whoami.rc }}"
+        msg: "whoami : {{ r1.stdout | default('(vide)') }} | rc={{ r1.rc | default('?') }}"
 
-    - name: Vérifier bash_profile sans become
-      ansible.builtin.shell: ls -la /home/psadm2/.bash_profile 2>&1 || echo "ABSENT"
-      args:
-        executable: /bin/bash
-      register: r1
-      failed_when: false
-
-    - name: Afficher bash_profile
-      ansible.builtin.debug:
-        msg: "bash_profile : {{ r1.stdout | default('(vide)') }} | rc={{ r1.rc }}"
-
-    - name: Vérifier psconfig.sh sans become
-      ansible.builtin.shell: ls -la {{ ps_home }}/psconfig.sh 2>&1 || echo "ABSENT"
-      args:
-        executable: /bin/bash
+    - name: ID utilisateur
+      ansible.builtin.command: id
       register: r2
       failed_when: false
 
-    - name: Afficher psconfig.sh
+    - name: Afficher id
       ansible.builtin.debug:
-        msg: "psconfig.sh : {{ r2.stdout | default('(vide)') }} | rc={{ r2.rc }}"
+        msg: "id : {{ r2.stdout | default('(vide)') }} | rc={{ r2.rc | default('?') }}"
 
-    - name: Vérifier psadmin binaire sans become
-      ansible.builtin.shell: ls -la {{ ps_home }}/bin/psadmin 2>&1 || echo "ABSENT"
-      args:
-        executable: /bin/bash
+    - name: Quel shell
+      ansible.builtin.command: echo $SHELL
       register: r3
       failed_when: false
 
-    - name: Afficher psadmin bin
+    - name: Afficher shell
       ansible.builtin.debug:
-        msg: "psadmin bin : {{ r3.stdout | default('(vide)') }} | rc={{ r3.rc }}"
+        msg: "shell : {{ r3.stdout | default('(vide)') }} | rc={{ r3.rc | default('?') }}"
 
-    - name: Chercher psadmin sur tout le système
-      ansible.builtin.shell: find /app -name "psadmin" -type f 2>/dev/null || echo "NON TROUVÉ"
-      args:
-        executable: /bin/bash
+    - name: Lister racine /
+      ansible.builtin.command: ls /
       register: r4
       failed_when: false
 
-    - name: Afficher localisation psadmin
+    - name: Afficher ls /
       ansible.builtin.debug:
-        msg: "psadmin trouvé : {{ r4.stdout_lines | default(['(vide)']) }}"
+        msg: "ls / : {{ r4.stdout_lines | default(['(vide)']) }} | rc={{ r4.rc | default('?') }}"
 
-    - name: Tester sudo disponible
-      ansible.builtin.shell: sudo -l 2>&1 | head -5
-      args:
-        executable: /bin/bash
+    - name: Lister /app
+      ansible.builtin.command: ls /app
       register: r5
       failed_when: false
 
-    - name: Afficher sudo
+    - name: Afficher ls /app
       ansible.builtin.debug:
-        msg: "sudo -l : {{ r5.stdout_lines | default(['(vide)']) }}"
+        msg: "ls /app : {{ r5.stdout_lines | default(['(vide)']) }} | rc={{ r5.rc | default('?') }}"

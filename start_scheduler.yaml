@@ -1,8 +1,6 @@
 - name: Démarrer PeopleSoft Process Scheduler
   hosts: all
   gather_facts: false
-  vars:
-    prcs_domain: PRCSDOM
   tasks:
 
     - name: Vérifier le statut du Scheduler

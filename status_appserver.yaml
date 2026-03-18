@@ -1,55 +1,41 @@
 ---
-- name: Diagnostic connexion SSH
+- name: Vérifier le statut du PeopleSoft Application Server
   hosts: all
   gather_facts: false
   vars:
-    ansible_python_interpreter: /usr/bin/python3.6
+    app_domain: APPDOM
+    ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
 
   tasks:
-    - name: Test ping simple
-      ansible.builtin.ping:
-
-    - name: Whoami brut
-      ansible.builtin.command: whoami
-      register: r1
+    - name: Vérifier le statut de l'AppServer
+      ansible.builtin.raw: |
+        export PS_HOME={{ ps_home }}
+        export PATH=$PS_HOME/bin:$PATH
+        export TUXDIR=$PS_HOME/bin
+        export PS_CFG_HOME=/home/psadm2
+        cd $PS_HOME
+        psadmin -c status -d {{ app_domain }} 2>&1
+      register: app_status
       failed_when: false
 
-    - name: Afficher whoami
+    - name: Afficher stdout complet
       ansible.builtin.debug:
-        msg: "whoami : {{ r1.stdout | default('(vide)') }} | rc={{ r1.rc | default('?') }}"
+        msg: "{{ app_status.stdout_lines | default(['(vide)']) }}"
 
-    - name: ID utilisateur
-      ansible.builtin.command: id
-      register: r2
-      failed_when: false
-
-    - name: Afficher id
+    - name: Afficher stderr
       ansible.builtin.debug:
-        msg: "id : {{ r2.stdout | default('(vide)') }} | rc={{ r2.rc | default('?') }}"
+        msg: "STDERR : {{ app_status.stderr | default('(vide)') }}"
 
-    - name: Quel shell
-      ansible.builtin.command: echo $SHELL
-      register: r3
-      failed_when: false
-
-    - name: Afficher shell
+    - name: Afficher RC
       ansible.builtin.debug:
-        msg: "shell : {{ r3.stdout | default('(vide)') }} | rc={{ r3.rc | default('?') }}"
+        msg: "RC : {{ app_status.rc | default('?') }}"
 
-    - name: Lister racine /
-      ansible.builtin.command: ls /
-      register: r4
-      failed_when: false
-
-    - name: Afficher ls /
+    - name: AppServer est UP
       ansible.builtin.debug:
-        msg: "ls / : {{ r4.stdout_lines | default(['(vide)']) }} | rc={{ r4.rc | default('?') }}"
+        msg: "✅ AppServer {{ app_domain }} est démarré"
+      when: "'Started' in (app_status.stdout | default(''))"
 
-    - name: Lister /app
-      ansible.builtin.command: ls /app
-      register: r5
-      failed_when: false
-
-    - name: Afficher ls /app
+    - name: AppServer est DOWN
       ansible.builtin.debug:
-        msg: "ls /app : {{ r5.stdout_lines | default(['(vide)']) }} | rc={{ r5.rc | default('?') }}"
+        msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
+      when: "'Started' not in (app_status.stdout | default(''))"

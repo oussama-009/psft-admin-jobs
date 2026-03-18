@@ -1,38 +1,32 @@
 ---
-- name: Vérifier le statut du PeopleSoft Application Server
+- name: Diagnostic PeopleSoft
   hosts: all
   gather_facts: false
   vars:
     ansible_python_interpreter: /usr/bin/python3.6
-    app_domain: APPDOM
     ps_home: /app/PSFT/distribution/FSCM9.2.046/pt/ps_home8.61.12
 
   tasks:
-    - name: Vérifier le statut de l'AppServer
+    - name: Vérifier existence des fichiers clés
       ansible.builtin.shell: |
-        source /home/psadm2/.bash_profile
-        source {{ ps_home }}/psconfig.sh
-        psadmin -c status -d {{ app_domain }}
+        echo "=== bash_profile ===" 
+        ls -la /home/psadm2/.bash_profile 2>&1 || echo "ABSENT"
+        echo "=== psconfig.sh ==="
+        ls -la {{ ps_home }}/psconfig.sh 2>&1 || echo "ABSENT"
+        echo "=== psadmin ==="
+        ls -la {{ ps_home }}/bin/psadmin 2>&1 || echo "ABSENT"
+        echo "=== PS_HOME env ==="
+        su - psadm2 -s /bin/bash -c "echo PS_HOME=\$PS_HOME"
+        echo "=== PATH env ==="
+        su - psadm2 -s /bin/bash -c "echo PATH=\$PATH"
+        echo "=== psadmin which ==="
+        su - psadm2 -s /bin/bash -c "which psadmin 2>&1 || echo NOT FOUND"
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
-      register: app_status
-      failed_when: false
+      become_user: root
+      register: diag
 
-    - name: Debug complet (stdout / stderr / rc)
+    - name: Afficher diagnostic
       ansible.builtin.debug:
-        msg:
-          - "STDOUT : {{ app_status.stdout | default('(vide)') }}"
-          - "STDERR : {{ app_status.stderr | default('(vide)') }}"
-          - "RC     : {{ app_status.rc | default('(inconnu)') }}"
-
-    - name: AppServer est UP
-      ansible.builtin.debug:
-        msg: "✅ AppServer {{ app_domain }} est démarré (Started)"
-      when: "'Started' in (app_status.stdout | default(''))"
-
-    - name: AppServer est DOWN
-      ansible.builtin.debug:
-        msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
-      when: "'Started' not in (app_status.stdout | default(''))"
+        msg: "{{ diag.stdout_lines }}"

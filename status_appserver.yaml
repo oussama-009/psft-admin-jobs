@@ -16,14 +16,17 @@
       become_user: psadm2
       register: app_status
       failed_when: false
+
     - name: Afficher le statut brut
       ansible.builtin.debug:
-        msg: "{{ app_status.stdout }}"
+        msg: "{{ app_status.stdout | default('⚠️ Pas de sortie détectée') }}"
+
     - name: AppServer est UP
       ansible.builtin.debug:
         msg: "✅ AppServer {{ app_domain }} est démarré (Started)"
-      when: "'Started' in app_status.stdout"
+      when: "'Started' in (app_status.stdout | default(''))"
+
     - name: AppServer est DOWN
       ansible.builtin.debug:
         msg: "❌ AppServer {{ app_domain }} est arrêté ou en erreur"
-      when: "'Started' not in app_status.stdout"
+      when: "'Started' not in (app_status.stdout | default(''))"

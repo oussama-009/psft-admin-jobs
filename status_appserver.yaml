@@ -1,5 +1,6 @@
 - name: Vérifier le statut du PeopleSoft Application Server
   hosts: all
+  gather_facts: false
   vars:
     app_domain: APPDOM
   tasks:

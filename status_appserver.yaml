@@ -6,8 +6,8 @@
     app_domain: APPDOM
 
   tasks:
-    - name: Vérifier le statut de l'AppServer
-      ansible.builtin.raw: su - psadm2 -s /bin/bash -c "source /home/psadm2/.bashrc && psadmin -c status -d {{ app_domain }} 2>&1"
+    - name: Tester sudo vers psadm2
+      ansible.builtin.raw: sudo -u psadm2 /bin/bash -c "source /home/psadm2/.bashrc && psadmin -c status -d {{ app_domain }} 2>&1"
       register: app_status
       failed_when: false
 

@@ -2,8 +2,7 @@
 - name: Statut PeopleSoft Web Server (PIA)
   hosts: all
   vars:
-    ansible_python_interpreter: /app/PSFT/distribution/FSCM9.2.046/setup/python/bin/python3.12
-    pia_domain: peoplesoft
+    pia_domain: peoplesoft        # ← plus de ansible_python_interpreter ici
   tasks:
     - name: Récupérer le statut du Web Server
       ansible.builtin.shell: |

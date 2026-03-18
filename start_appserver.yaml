@@ -1,8 +1,8 @@
 ---
 - name: Démarrer PeopleSoft Application Server
   hosts: all
+  gather_facts: false
   vars:
-    ansible_python_interpreter: /usr/bin/python3.6
     app_domain: APPDOM
 
   tasks:

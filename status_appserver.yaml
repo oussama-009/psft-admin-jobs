@@ -12,62 +12,62 @@
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
+      become_user: root
       register: r1
       failed_when: false
+
+    - name: Afficher bash_profile
+      ansible.builtin.debug:
+        msg: "bash_profile : {{ r1.stdout | default('(vide)') }} | rc={{ r1.rc | default('?') }}"
 
     - name: Vérifier psconfig.sh
       ansible.builtin.shell: ls -la {{ ps_home }}/psconfig.sh 2>&1 || echo "ABSENT"
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
+      become_user: root
       register: r2
       failed_when: false
+
+    - name: Afficher psconfig.sh
+      ansible.builtin.debug:
+        msg: "psconfig.sh : {{ r2.stdout | default('(vide)') }} | rc={{ r2.rc | default('?') }}"
 
     - name: Vérifier psadmin binaire
       ansible.builtin.shell: ls -la {{ ps_home }}/bin/psadmin 2>&1 || echo "ABSENT"
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
+      become_user: root
       register: r3
       failed_when: false
 
-    - name: Vérifier PS_HOME
-      ansible.builtin.shell: echo "PS_HOME=$PS_HOME"
+    - name: Afficher psadmin bin
+      ansible.builtin.debug:
+        msg: "psadmin bin : {{ r3.stdout | default('(vide)') }} | rc={{ r3.rc | default('?') }}"
+
+    - name: Chercher psadmin sur tout le système
+      ansible.builtin.shell: find /app -name "psadmin" -type f 2>/dev/null || echo "NON TROUVÉ"
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
+      become_user: root
       register: r4
       failed_when: false
 
-    - name: Vérifier PATH et psadmin
-      ansible.builtin.shell: which psadmin 2>&1 || echo "psadmin NOT FOUND"
+    - name: Afficher localisation psadmin
+      ansible.builtin.debug:
+        msg: "psadmin trouvé : {{ r4.stdout_lines | default(['(vide)']) }}"
+
+    - name: Vérifier utilisateur psadm2
+      ansible.builtin.shell: id psadm2 2>&1 || echo "USER ABSENT"
       args:
         executable: /bin/bash
       become: true
-      become_user: psadm2
+      become_user: root
       register: r5
       failed_when: false
 
-    - name: Afficher bash_profile
+    - name: Afficher utilisateur psadm2
       ansible.builtin.debug:
-        msg: "bash_profile : {{ r1.stdout | default('(vide)') }}"
-
-    - name: Afficher psconfig.sh
-      ansible.builtin.debug:
-        msg: "psconfig.sh  : {{ r2.stdout | default('(vide)') }}"
-
-    - name: Afficher psadmin bin
-      ansible.builtin.debug:
-        msg: "psadmin bin  : {{ r3.stdout | default('(vide)') }}"
-
-    - name: Afficher PS_HOME
-      ansible.builtin.debug:
-        msg: "PS_HOME      : {{ r4.stdout | default('(vide)') }}"
-
-    - name: Afficher which psadmin
-      ansible.builtin.debug:
-        msg: "which psadmin: {{ r5.stdout | default('(vide)') }}"
+        msg: "psadm2 : {{ r5.stdout | default('(vide)') }}"

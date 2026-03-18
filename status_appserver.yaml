@@ -11,9 +11,9 @@
       ansible.builtin.raw: |
         export PS_HOME={{ ps_home }}
         export PATH=$PS_HOME/bin:$PATH
+        export LD_LIBRARY_PATH=$PS_HOME/bin:$PS_HOME/lib:$PS_HOME/lib64:$LD_LIBRARY_PATH
         export TUXDIR=$PS_HOME/bin
         export PS_CFG_HOME=/home/psadm2
-        cd $PS_HOME
         psadmin -c status -d {{ app_domain }} 2>&1
       register: app_status
       failed_when: false
@@ -21,10 +21,6 @@
     - name: Afficher stdout complet
       ansible.builtin.debug:
         msg: "{{ app_status.stdout_lines | default(['(vide)']) }}"
-
-    - name: Afficher stderr
-      ansible.builtin.debug:
-        msg: "STDERR : {{ app_status.stderr | default('(vide)') }}"
 
     - name: Afficher RC
       ansible.builtin.debug:

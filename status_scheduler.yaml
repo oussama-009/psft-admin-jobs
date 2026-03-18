@@ -1,7 +1,6 @@
 - name: Statut PeopleSoft Process Scheduler
   hosts: all
   vars:
-    ansible_python_interpreter: /usr/bin/python3.6
     prcs_domain: PRCSDOM
   tasks:
 

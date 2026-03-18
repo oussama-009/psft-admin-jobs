@@ -1,5 +1,6 @@
 - name: Statut PeopleSoft Process Scheduler
   hosts: all
+  gather_facts: false
   vars:
     prcs_domain: PRCSDOM
   tasks:

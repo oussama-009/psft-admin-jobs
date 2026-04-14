@@ -1,3 +1,4 @@
+```mermaid
 graph TD
     classDef startEnd fill:#f96,stroke:#333,stroke-width:2px;
     classDef process fill:#bbf,stroke:#333,stroke-width:1px;
@@ -59,3 +60,4 @@ graph TD
     class START,END1,END2 startEnd
     class classifier,recuperer_contexte,repondre_general,analyser_question,chercher_influxdb,chercher_loki,correler_analyser,decider_continuer,generer_reponse process
     class router_mode,router_sources,router_apres_influxdb,router_continuer decision
+```

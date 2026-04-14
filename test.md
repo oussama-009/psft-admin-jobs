@@ -1,4 +1,3 @@
-```mermaid
 graph TD
     classDef startEnd fill:#f96,stroke:#333,stroke-width:2px;
     classDef process fill:#bbf,stroke:#333,stroke-width:1px;
@@ -37,4 +36,3 @@ graph TD
     router_continuer -->|"reboucle_influxdb"| chercher_influxdb
     router_continuer -->|"reboucle_influxdb_et_loki"| chercher_influxdb
     router_continuer -->|"reboucle_loki"| chercher_loki
-```
